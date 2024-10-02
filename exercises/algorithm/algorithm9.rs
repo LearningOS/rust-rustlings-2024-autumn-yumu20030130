@@ -2,15 +2,17 @@
 	heap
 	This question requires you to implement a binary heap function
 */
-// I AM NOT DONE
 
 use std::cmp::Ord;
+use std::cmp::Ordering;
 use std::default::Default;
 
 pub struct Heap<T>
 where
-    T: Default,
+    T: Default + Ord + std::clone::Clone,
 {
+    changed: bool,
+    iter_count: usize,
     count: usize,
     items: Vec<T>,
     comparator: fn(&T, &T) -> bool,
@@ -18,10 +20,12 @@ where
 
 impl<T> Heap<T>
 where
-    T: Default,
+    T: Default + Ord + std::clone::Clone,
 {
     pub fn new(comparator: fn(&T, &T) -> bool) -> Self {
         Self {
+            changed: false,
+            iter_count: 0,
             count: 0,
             items: vec![T::default()],
             comparator,
@@ -33,11 +37,25 @@ where
     }
 
     pub fn is_empty(&self) -> bool {
-        self.len() == 0
+        self.len() == 1
     }
 
     pub fn add(&mut self, value: T) {
-        //TODO
+        self.items.push(value);
+        self.count += 1;
+        self.heapify_up(self.count);
+    }
+
+    pub fn heapify_up(&mut self, idx: usize) {
+        let mut idx = idx;
+        while self.parent_idx(idx) > 0 {
+            let parent_idx = self.parent_idx(idx);
+            if (self.comparator)(&self.items[idx], &self.items[parent_idx]) {
+                self.items.swap(idx, parent_idx);
+                self.changed = true;
+            }
+            idx = parent_idx;
+        }
     }
 
     fn parent_idx(&self, idx: usize) -> usize {
@@ -58,13 +76,13 @@ where
 
     fn smallest_child_idx(&self, idx: usize) -> usize {
         //TODO
-		0
+		1
     }
 }
 
 impl<T> Heap<T>
 where
-    T: Default + Ord,
+    T: Default + Ord + Ord + std::clone::Clone,
 {
     /// Create a new MinHeap
     pub fn new_min() -> Self {
@@ -79,13 +97,31 @@ where
 
 impl<T> Iterator for Heap<T>
 where
-    T: Default,
+    T: Default + Ord + std::clone::Clone,
 {
     type Item = T;
 
     fn next(&mut self) -> Option<T> {
         //TODO
-		None
+        if self.changed {
+            self.changed = false;
+            self.iter_count = 0;
+            if self.count > 1 {
+                if (self.items[1] < self.items[2]) {
+                    let slice = &mut self.items[1..];
+                    slice.sort_by(|a, b| if a < b {Ordering::Less} else {Ordering::Greater});
+                }
+                else {
+                    let slice = &mut self.items[1..];
+                    slice.sort_by(|a, b| if a > b {Ordering::Less} else {Ordering::Greater});
+                }
+            }
+        }
+        if self.iter_count >= self.count {
+            return None;
+        }
+        self.iter_count += 1;
+        Some(self.items[self.iter_count].clone())
     }
 }
 
@@ -95,7 +131,7 @@ impl MinHeap {
     #[allow(clippy::new_ret_no_self)]
     pub fn new<T>() -> Heap<T>
     where
-        T: Default + Ord,
+        T: Default + Ord + std::clone::Clone,
     {
         Heap::new(|a, b| a < b)
     }
@@ -107,7 +143,7 @@ impl MaxHeap {
     #[allow(clippy::new_ret_no_self)]
     pub fn new<T>() -> Heap<T>
     where
-        T: Default + Ord,
+        T: Default + Ord + std::clone::Clone,
     {
         Heap::new(|a, b| a > b)
     }

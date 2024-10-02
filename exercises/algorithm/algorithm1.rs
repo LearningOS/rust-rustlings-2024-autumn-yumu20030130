@@ -2,7 +2,6 @@
 	single linked list merge
 	This problem requires you to merge two ordered singly linked lists into one ordered singly linked list
 */
-// I AM NOT DONE
 
 use std::fmt::{self, Display, Formatter};
 use std::ptr::NonNull;
@@ -29,13 +28,7 @@ struct LinkedList<T> {
     end: Option<NonNull<Node<T>>>,
 }
 
-impl<T> Default for LinkedList<T> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<T> LinkedList<T> {
+impl<T: std::cmp::PartialOrd + Clone> LinkedList<T> {
     pub fn new() -> Self {
         Self {
             length: 0,
@@ -72,12 +65,40 @@ impl<T> LinkedList<T> {
 	pub fn merge(list_a:LinkedList<T>,list_b:LinkedList<T>) -> Self
 	{
 		//TODO
-		Self {
-            length: 0,
-            start: None,
-            end: None,
+        let mut list_c = LinkedList::<T>::new();
+        let mut a = list_a.start;
+        let mut b = list_b.start;
+        loop {
+            match (a, b) {
+                (None, None) => return list_c,
+                (Some(a_ptr), None) => {
+                    list_c.add(unsafe { (*a_ptr.as_ptr()).val.clone() });
+                    a = unsafe { (*a_ptr.as_ptr()).next };
+                },
+                (None, Some(b_ptr)) => {
+                    list_c.add(unsafe { (*b_ptr.as_ptr()).val.clone() });
+                    b = unsafe { (*b_ptr.as_ptr()).next };
+                },
+                (Some(a_ptr), Some(b_ptr)) => {
+                    let val_a = unsafe { &(*a_ptr.as_ptr()).val };
+                    let val_b = unsafe { &(*b_ptr.as_ptr()).val };
+                    if (*val_a) < (*val_b) {
+                        list_c.add(unsafe { (*a_ptr.as_ptr()).val.clone() });
+                        a = unsafe { (*a_ptr.as_ptr()).next };
+                    } else {
+                        list_c.add(unsafe { (*b_ptr.as_ptr()).val.clone() });
+                        b = unsafe { (*b_ptr.as_ptr()).next };
+                    }
+                }
+            }
         }
 	}
+}
+
+impl<T: std::cmp::PartialOrd + Clone> Default for LinkedList<T> {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl<T> Display for LinkedList<T>
